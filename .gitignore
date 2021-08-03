@@ -1,0 +1,6 @@
+.coverage
+__pycache__
+*.lwp
+apicache*
+throttle.ctrl
+user-config.py
