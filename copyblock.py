@@ -166,35 +166,6 @@ class CopyBlock:
             target_blocks.append(target_block)
         print(f"Adding {len(target_blocks)}...")
 
-        if not self.dry_run:
-            if len(target_blocks) > 5:
-                if self.limit and self.limit > 5:
-                    print("Adding flood flag...")
-                    print(
-                        self.eswiki._simple_request(
-                            action="userrights",
-                            format="json",
-                            user=self.eswiki.username(),
-                            add="flood",
-                            reason="Bloqueos masivos",  # Add a parameter here?
-                            token=self.eswiki.get_tokens(["userrights"])["userrights"],
-                        ).submit()
-                    )
-                elif self.limit and self.limit <= 5:
-                    pass
-                else:
-                    print("Adding flood flag...")
-                    print(
-                        self.eswiki._simple_request(
-                            action="userrights",
-                            format="json",
-                            user=self.eswiki.username(),
-                            add="flood",
-                            reason="Bloqueos masivos",  # Add a parameter here?
-                            token=self.eswiki.get_tokens(["userrights"])["userrights"],
-                        ).submit()
-                    )
-
         for i, target_block in enumerate(target_blocks):
             user = target_block["user"]
             expiry = target_block["expiry"]
@@ -223,19 +194,6 @@ class CopyBlock:
                         ).submit()
                     )
                 return
-
-        if not self.dry_run:
-            if len(target_blocks) > 5:
-                print(
-                    self.eswiki._simple_request(
-                        action="userrights",
-                        format="json",
-                        user=self.site.username(),
-                        remove="flood",
-                        reason="Done",  # Add a parameter here?
-                        token=self.eswiki.get_tokens(["userrights"])["userrights"],
-                    ).submit()
-                )
 
 
 @click.command()
