@@ -183,17 +183,6 @@ class CopyBlock:
                     logger.error(f"Error in block request: {reqblock}")
                     continue
             if self.limit > 0 and i >= self.limit:
-                if self.limit > 5 and not self.dry_run:
-                    print(
-                        self.eswiki._simple_request(
-                            action="userrights",
-                            format="json",
-                            user=self.site.username(),
-                            remove="flood",
-                            reason="Done",  # Add a parameter here?
-                            token=self.eswiki.get_tokens(["userrights"])["userrights"],
-                        ).submit()
-                    )
                 break
         logger.info(f"Imported {i} blocks")
 
