@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+import logging
+
+logging.basicConfig(format="[%(asctime)s][%(name)s][%(levelname)s] %(message)s")
+logging.getLogger("pywiki").disabled = True
+logger = logging.getLogger("copyblock")
+
 import datetime
 import ipaddress
 import re
@@ -57,6 +63,12 @@ class CopyBlock:
         self.block_reason = block_reason
 
     def run(self) -> None:
+
+        if self.verbose:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+
         if not self.dry_run:
             self.site.login()
             self.meta.login()
@@ -64,7 +76,7 @@ class CopyBlock:
 
         bkshow_filter = "range" if self.ranges else "ip"
 
-        print("Preloading local blocks...")
+        logger.info("Preloading local blocks")
         cur_blocks = ListGenerator(
             site=self.eswiki,
             listaction="blocks",
@@ -74,15 +86,13 @@ class CopyBlock:
         )
         localblocks = {}
         for localblock in cur_blocks:
-            if self.verbose and "user" not in localblock:
-                print("autoblock", localblock)
-                continue
-            elif "user" not in localblock:
+            if "user" not in localblock:
+                logger.debug(f"autoblock: {localblock}")
                 continue
             localblocks[localblock["user"]] = localblock
-        print(f"Preloaded {len(localblocks)} blocks")
+        logger.info(f"Preloaded {len(localblocks)} blocks")
 
-        print("Computing target blocks...")
+        logger.info("Computing target blocks")
         target_blocks = []
         blocks_gen = ListGenerator(
             site=self.site,
@@ -95,11 +105,9 @@ class CopyBlock:
             if self.source_user and log["by"] != self.source_user:
                 continue
 
-            if self.verbose and "user" not in log:
+            if "user" not in log:
                 # Yes, this happens, apparently
-                print("autoblock", log)
-                continue
-            elif "user" not in log:
+                logger.debug(f"autoblock: {log}")
                 continue
             user = log["user"]
 
@@ -110,38 +118,31 @@ class CopyBlock:
 
             expiry = parse_timestamp(log["expiry"])
             if expiry <= datetime.datetime.now():
-                if self.verbose:
-                    print("ignore (expired)", user)
+                logger.debug(f"ignore (expired): {user}")
                 continue
 
             duration_hours = int(
                 (expiry - datetime.datetime.now()).total_seconds() // 60 // 60
             )
             if not duration_hours:
-                if self.verbose:
-                    print("ignore (expiry too near)", user)
+                logger.debug(f"ignore (expiry too near): {user}")
                 continue
 
             if not re.search(self.comment_pattern, log["reason"]):
-                if self.verbose:
-                    # print("ignore (no match)", user)
-                    pass
+                # logger.debug(f"ignore (no match): {user}")
                 continue
 
             if self.ranges:
                 if not is_net(user):
-                    if self.verbose:
-                        print("ignore (not range)", user)
+                    logger.debug(f"ignore (not range): {user}")
                     continue
             else:
                 if not is_ip(user):
-                    if self.verbose:
-                        print("ignore (not IP)", user)
+                    logger.debug(f"ignore (not IP): {user}")
                     continue
 
             if user in localblocks:
-                if self.verbose:
-                    print("ignore (active block)", user)
+                logger.debug(f"ignore (active block): {user}")
                 continue
 
             expiry = f"{duration_hours} hours"
@@ -164,22 +165,22 @@ class CopyBlock:
             if allowusertalk:
                 target_block["allowusertalk"] = 1
             target_blocks.append(target_block)
-        print(f"Adding {len(target_blocks)}...")
+        logger.info(f"Adding {len(target_blocks)}")
 
         for i, target_block in enumerate(target_blocks):
             user = target_block["user"]
             expiry = target_block["expiry"]
             reason = target_block["reason"]
-            print(i, "block", user, expiry, reason)
+            logger.info(f"{i} block {user} {expiry} {reason}")
             if not self.dry_run:
                 token = self.eswiki.get_tokens(["csrf"])["csrf"]
                 target_block = dict(target_block)
                 target_block["action"] = "block"
                 target_block["token"] = token
                 reqblock = self.eswiki._simple_request(**target_block).submit()
-                print(reqblock)
-                if "error" in reqblock:
-                    print("ERROR", reqblock)
+                logger.info(f"request: {reqblock}")
+                if "error" in reqbloc:
+                    logger.error(f"Error in block request: {reqblock}")
                     continue
             if self.limit > 0 and i >= self.limit:
                 if self.limit > 5 and not self.dry_run:
@@ -194,7 +195,7 @@ class CopyBlock:
                         ).submit()
                     )
                 break
-        print(f"Imported {i} blocks")
+        logger.info(f"Imported {i} blocks")
 
 
 @click.command()
