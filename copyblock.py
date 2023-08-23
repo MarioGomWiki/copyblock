@@ -193,7 +193,8 @@ class CopyBlock:
                             token=self.eswiki.get_tokens(["userrights"])["userrights"],
                         ).submit()
                     )
-                return
+                break
+        print(f"Imported {i} blocks")
 
 
 @click.command()
