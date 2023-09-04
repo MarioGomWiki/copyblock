@@ -50,6 +50,7 @@ class CopyBlock:
         verbose: bool = False,
         limit: int = 0,
         block_reason: str = "",
+        anon_only: bool = False,
     ) -> None:
         self.site = Site(lang, site)
         self.meta = Site("meta", "meta")
@@ -61,6 +62,7 @@ class CopyBlock:
         self.verbose = verbose
         self.limit = limit
         self.block_reason = block_reason
+        self.anon_only = anon_only
 
     def run(self) -> None:
 
@@ -156,7 +158,7 @@ class CopyBlock:
                 "expiry": expiry,
                 "reason": reason,
             }
-            if anononly:
+            if anononly or self.anon_only:
                 target_block["anononly"] = 1
             if nocreate:
                 target_block["nocreate"] = 1
@@ -236,6 +238,13 @@ class CopyBlock:
     "--block-reason",
     help="Block reason to use. Default: The existing local block reason.",
 )
+@click.option(
+    "--anon-only",
+    required=False,
+    default=False,
+    type=bool,
+    help="Always add anon. only flag to blocks.",
+)
 def run_cli(
     lang,
     site,
@@ -246,6 +255,7 @@ def run_cli(
     verbose,
     limit,
     block_reason,
+    anon_only,
 ):
     bot = CopyBlock(
         lang=lang,
@@ -257,6 +267,7 @@ def run_cli(
         verbose=verbose,
         limit=limit,
         block_reason=block_reason,
+        anon_only=anon_only,
     )
     bot.run()
 
