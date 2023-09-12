@@ -52,9 +52,8 @@ class CopyBlock:
         block_reason: str = "",
         anon_only: bool = False,
     ) -> None:
-        self.site = Site(lang, site)
-        self.meta = Site("meta", "meta")
-        self.eswiki = Site("es", "wikipedia")
+        self.source_site = Site(lang, site)
+        self.target_site = Site("es", "wikipedia")
         self.source_user = source_user
         self.dry_run = dry_run
         self.ranges = ranges
@@ -72,15 +71,13 @@ class CopyBlock:
             logger.setLevel(logging.INFO)
 
         if not self.dry_run:
-            self.site.login()
-            self.meta.login()
-            self.eswiki.login()
+            self.target_site.login()
 
         bkshow_filter = "range" if self.ranges else "ip"
 
         logger.info("Preloading local blocks")
         cur_blocks = ListGenerator(
-            site=self.eswiki,
+            site=self.target_site,
             listaction="blocks",
             bkprop="user|reason|by|expiry|flags",
             bkshow=f"{bkshow_filter}",
@@ -97,7 +94,7 @@ class CopyBlock:
         logger.info("Computing target blocks")
         target_blocks = []
         blocks_gen = ListGenerator(
-            site=self.site,
+            site=self.source_site,
             listaction="blocks",
             bkprop="user|reason|by|expiry|flags",
             bkshow=f"{bkshow_filter}|temp",
@@ -176,11 +173,11 @@ class CopyBlock:
             reason = target_block["reason"]
             logger.info(f"{i} block {user} {expiry} {reason}")
             if not self.dry_run:
-                token = self.eswiki.get_tokens(["csrf"])["csrf"]
+                token = self.target_site.get_tokens(["csrf"])["csrf"]
                 target_block = dict(target_block)
                 target_block["action"] = "block"
                 target_block["token"] = token
-                reqblock = self.eswiki._simple_request(**target_block).submit()
+                reqblock = self.target_site._simple_request(**target_block).submit()
                 logger.info(f"request: {reqblock}")
                 if "error" in reqbloc:
                     logger.error(f"Error in block request: {reqblock}")
