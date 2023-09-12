@@ -179,7 +179,7 @@ class CopyBlock:
                 target_block["token"] = token
                 reqblock = self.target_site._simple_request(**target_block).submit()
                 logger.info(f"request: {reqblock}")
-                if "error" in reqbloc:
+                if "error" in reqblock:
                     logger.error(f"Error in block request: {reqblock}")
                     continue
             if self.limit > 0 and i >= self.limit:
