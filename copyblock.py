@@ -162,10 +162,11 @@ class CopyBlock:
                 target_block["anononly"] = 1
             if nocreate:
                 target_block["nocreate"] = 1
-            if noemail:
-                target_block["noemail"] = 1
-            if allowusertalk:
-                target_block["allowusertalk"] = 1
+            # XXX: Disable for safety
+            # if noemail:
+            #    target_block["noemail"] = 1
+            # if allowusertalk:
+            #    target_block["allowusertalk"] = 1
             target_blocks.append(target_block)
         logger.info(f"Adding {len(target_blocks)}")
 
@@ -240,8 +241,7 @@ class CopyBlock:
 )
 @click.option(
     "--anon-only",
-    required=False,
-    default=False,
+    is_flag=True,
     type=bool,
     help="Always add anon. only flag to blocks.",
 )
